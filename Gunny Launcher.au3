@@ -2,8 +2,6 @@
 #AutoIt3Wrapper_Outfile_type=a3x
 #AutoIt3Wrapper_Tidy_Stop_OnError=n
 #AutoIt3Wrapper_Run_Au3Stripper=y
-#AutoIt3Wrapper_Run_After=del "MainFile_stripped.au3"
-#AutoIt3Wrapper_Run_After=ren "%out%" "MainFile.a3x"
 #AutoIt3Wrapper_Tidy_Stop_OnError=n
 #Au3Stripper_Parameters=/sf /sv /rm /pe
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
