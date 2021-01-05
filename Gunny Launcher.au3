@@ -1,8 +1,8 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_Outfile_type=a3x
+#AutoIt3Wrapper_Icon=..\..\..\..\..\..\Personal\Logo.ico
+#AutoIt3Wrapper_Outfile=D:\Cloud\OnlineDrive\Programing\AutoIt\Program Files\ISN AutoIt Studio\Projects\Gunny Client\Gunny Launcher.exe
 #AutoIt3Wrapper_Tidy_Stop_OnError=n
 #AutoIt3Wrapper_Run_Au3Stripper=y
-#AutoIt3Wrapper_Tidy_Stop_OnError=n
 #Au3Stripper_Parameters=/sf /sv /rm /pe
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 ;*****************************************
@@ -89,7 +89,12 @@ Func _Launch($username, $password, $server, $isFlashObj = False)
 
 	$data = _HTMLDecode(_HttpRequest(2, 'http://idgunny.360game.vn/server-game?download=direct&sid=none&err=1&mess=succ&sid=' & $id))
 
-	$data = StringTrimLeft(StringLower($data), StringInStr($data, 'title="' & StringLower($server)))
+	Local $pos = StringInStr($data, 'title="' & StringLower($server)&'"')
+	If @error Then $pos = StringInStr($data, 'title="' & StringLower($server))
+	$data = StringTrimLeft(StringLower($data), $pos)
+
+	ConsoleWrite($data)
+
 	$data = StringRegExp($data, 'href="(.*?)">', 3)
 	If @error Then Exit MsgBox(4096, 'Lỗi', 'Đăng nhập thất bại')
 	ConsoleWrite($data[0])
@@ -100,6 +105,7 @@ Func _Launch($username, $password, $server, $isFlashObj = False)
 	If @error Then Exit MsgBox(4096, 'Lỗi', 'Đăng nhập thất bại')
 
 	Local $SeverID = StringRegExp($data, 'src="http:\/\/s(.*?)\.', 3)
+
 	If @error Then Exit MsgBox(4096, 'Lỗi', 'Đăng nhập thất bại')
 
 	If $isFlashObj Then
