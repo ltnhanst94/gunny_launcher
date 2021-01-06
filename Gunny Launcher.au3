@@ -3,7 +3,7 @@
 #AutoIt3Wrapper_Outfile=D:\Cloud\OnlineDrive\Programing\AutoIt\Program Files\ISN AutoIt Studio\Projects\Gunny Client\Gunny Launcher.exe
 #AutoIt3Wrapper_Tidy_Stop_OnError=n
 #AutoIt3Wrapper_Run_Au3Stripper=y
-#Au3Stripper_Parameters=/sf /sv /rm /pe
+#Au3Stripper_Parameters=/sf /sv /pe
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 ;*****************************************
 #AutoIt3Wrapper_Au3stripper_OnError=ForceUse
@@ -16,6 +16,8 @@
 #Include <GuiButton.au3>
 #include <EditConstants.au3>
 #include <ComboConstants.au3>
+#include <IE.au3>
+#include <Include/CoProc.au3>
 
 Global $Form1 = GUICreate("Gunny Launcher",269,128,-1,-1,-1,$WS_EX_TOPMOST)
 GUICtrlCreateLabel("Username",11,10,74,15,-1,-1)
@@ -39,9 +41,8 @@ GUICtrlSetBkColor(-1,"-2")
 Global $Bt_AutoLogin = GUICtrlCreateButton("Auto Login",31,90,100,30,-1,-1)
 GUICtrlSetFont(-1,11,400,0,"Arial")
 
-#include <_HttpRequest.au3>
+#include <Include/_HttpRequest.au3>
 #include <Array.au3>
-#include <IE.au3>
 
 Global $isFlashObj = True
 
@@ -56,32 +57,25 @@ Next
 
 GUISetState()
 
-Local $sMsg
 While 1
-	$sMsg = GUIGetMsg(1)
-	If $sMsg[1] = $Form1 Then
-		Switch $sMsg[0]
-			Case $GUI_EVENT_CLOSE
-				Exit
-			Case $Bt_Login
-				_Launch(StringLower(GUICtrlRead($Ip_Username)), GUICtrlRead($Ip_Password), GUICtrlRead($Cb_Server), $isFlashObj)
-			Case $Bt_AutoLogin
-				Local $AccArray = FileReadToArray(@ScriptDir & "\AccountLogin.txt")
-				For $Acc in $AccArray
-					Local $rAcc = StringSplit($Acc, "|", 2)
-					_Launch($rAcc[0], $rAcc[1], $rAcc[2], $isFlashObj)
-				Next
+	Switch GUIGetMsg()
+		Case $GUI_EVENT_CLOSE
+			Exit
+		Case $Bt_Login
+			_Launch_Open(StringLower(GUICtrlRead($Ip_Username)), GUICtrlRead($Ip_Password), GUICtrlRead($Cb_Server), $isFlashObj)
+		Case $Bt_AutoLogin
+			Local $AccArray = FileReadToArray(@ScriptDir & "\AccountLogin.txt")
+			For $Acc in $AccArray
+				Local $rAcc = StringSplit($Acc, "|", 2)
+				_Launch_Open(StringLower($rAcc[0]), $rAcc[1], $rAcc[2], $isFlashObj)
+			Next
 
-		EndSwitch
-	Else
-		Switch $sMsg[0]
-			Case $GUI_EVENT_CLOSE
-				GUIDelete($sMsg[1])
-		EndSwitch
-	EndIf
+	EndSwitch
+	Sleep(10)
 Wend
 
-Func _Launch($username, $password, $server, $isFlashObj = False)
+
+Func _Launch_Open($username, $password, $server, $isFlashObj = False)
 	_HttpRequest_SessionClear()
 	_HttpRequest(0, 'http://idgunny.360game.vn?download=direct')
 	Local $data = _HttpRequest(1, 'https://sso3.zing.vn/xlogin', _Data2SendEncode('u=' & $username & '&p=' & $password & '&u1=http%3A%2F%2Fidgunny.360game.vn%2Flogin-game%3Fdownload%3Ddirect%26sid%3Dnone%26err%3D1&fp=http%3A%2F%2Fidgunny.360game.vn%2Flogin-game%3Fdownload%3Ddirect%26sid%3Dnone%26err%3D1&pid=243&apikey=848dfc7c1dfe4da3b8dd3c58f8d34be8'))
@@ -105,7 +99,27 @@ Func _Launch($username, $password, $server, $isFlashObj = False)
 
 	If @error Then Exit MsgBox(4096, 'Lỗi', 'Đăng nhập thất bại')
 
+	ConsoleWrite('server ID: ' & $SeverID[0] & @CRLF)
+	ConsoleWrite('user name: ' & $username & @CRLF)
+	ConsoleWrite('key: ' &  $Key[0] & @CRLF)
+	$id = StringMid($id, StringInStr($id, 'sid=') + 4)
+	ConsoleWrite('sId: ' &  $id & @CRLF)
+
 	If $isFlashObj Then
+		Local $url = StringFormat('http://res%s.gn.zing.vn/flash/Loading.swf?download=direct&user=%s&key=%s&isGuest=False&ua=&fbapp=false&v=&rand=&config=http://s%s.gn.zing.vn/config.xml&sessionId=%s', $SeverID[0] == "1" ? "" : $SeverID[0], $username, $Key[0], $SeverID[0], $id)
+	Else
+		Local $url = StringFormat("http://s%s.gn.zing.vn/Default.aspx?download=direct&user=%s&key=%s", $SeverID[0], $username, $Key[0])
+	EndIf
+	ConsoleWrite('url: ' &  $url & @CRLF)
+
+	_CoProc('_Launch_Cmd("'& $isFlashObj &'", "'& $url &'")')
+EndFunc
+
+#Au3Stripper_Ignore_Funcs = _Launch_Cmd
+Func _Launch_Cmd($isFlashObj, $url)
+	Local $isObj = StringLower($isFlashObj) == 'true'
+
+	If $isObj Then
 		Local $oSWF = ObjCreate("ShockwaveFlash.ShockwaveFlash.1")
 	Else
 		Local $oSWF = _IECreateEmbedded()
@@ -116,14 +130,7 @@ Func _Launch($username, $password, $server, $isFlashObj = False)
 	GUICtrlCreateObj($oSWF, 0, 0, 1000, 600)
 	GUISetState()
 
-	ConsoleWrite('server ID: ' & $SeverID[0] & @CRLF)
-	ConsoleWrite('user name: ' & $username & @CRLF)
-	ConsoleWrite('key: ' &  $Key[0] & @CRLF)
-	$id = StringMid($id, StringInStr($id, 'sid=') + 4)
-	ConsoleWrite('sId: ' &  $id & @CRLF)
-	Local $url = StringFormat('http://res%s.gn.zing.vn/flash/Loading.swf?download=direct&user=%s&key=%s&isGuest=False&ua=&fbapp=false&v=&rand=&config=http://s%s.gn.zing.vn/config.xml&sessionId=%s', $SeverID[0] == "1" ? "" : $SeverID[0], $username, $Key[0], $SeverID[0], $id)
-	ConsoleWrite('url: ' &  $url & @CRLF)
-	If $isFlashObj Then
+	If $isObj Then
 		With $oSWF
 			.Movie = $url
 			.allowScriptAccess = "always"
@@ -133,9 +140,16 @@ Func _Launch($username, $password, $server, $isFlashObj = False)
 			.wmode = "direct"
 		EndWith
 	Else
-		_IENavigate($oSWF,StringFormat("http://s%s.gn.zing.vn/Default.aspx?download=direct&user=%s&key=%s", $SeverID[0], $username, $Key[0]))
+		_IENavigate($oSWF, $url)
 	EndIf
 
+	While 1
+		Switch GUIGetMsg()
+			Case $GUI_EVENT_CLOSE
+				Exit
+		EndSwitch
+		Sleep(10)
+	WEnd
 EndFunc
 
 Func _GetServerList()
