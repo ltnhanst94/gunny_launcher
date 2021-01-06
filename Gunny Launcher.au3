@@ -148,7 +148,7 @@ Func _Launch_Cmd($isFlashObj, $url)
 			Case $GUI_EVENT_CLOSE
 				Exit
 		EndSwitch
-		Sleep(10)
+		Sleep(1)
 	WEnd
 EndFunc
 
