@@ -60,24 +60,24 @@ Local $sMsg
 While 1
 	$sMsg = GUIGetMsg(1)
 	If $sMsg[1] = $Form1 Then
-			Switch $sMsg[0]
-				Case $GUI_EVENT_CLOSE
-					Exit
-				Case $Bt_Login
-					_Launch(GUICtrlRead($Ip_Username), GUICtrlRead($Ip_Password), GUICtrlRead($Cb_Server), $isFlashObj)
-				Case $Bt_AutoLogin
-					Local $AccArray = FileReadToArray(@ScriptDir & "\AccountLogin.txt")
-					For $Acc in $AccArray
-						Local $rAcc = StringSplit($Acc, "|", 2)
-						_Launch($rAcc[0], $rAcc[1], $rAcc[2], $isFlashObj)
-					Next
+		Switch $sMsg[0]
+			Case $GUI_EVENT_CLOSE
+				Exit
+			Case $Bt_Login
+				_Launch(StringLower(GUICtrlRead($Ip_Username)), GUICtrlRead($Ip_Password), GUICtrlRead($Cb_Server), $isFlashObj)
+			Case $Bt_AutoLogin
+				Local $AccArray = FileReadToArray(@ScriptDir & "\AccountLogin.txt")
+				For $Acc in $AccArray
+					Local $rAcc = StringSplit($Acc, "|", 2)
+					_Launch($rAcc[0], $rAcc[1], $rAcc[2], $isFlashObj)
+				Next
 
-			EndSwitch
-		Else
-			Switch $sMsg[0]
-				Case $GUI_EVENT_CLOSE
-					GUIDelete($sMsg[1])
-			EndSwitch
+		EndSwitch
+	Else
+		Switch $sMsg[0]
+			Case $GUI_EVENT_CLOSE
+				GUIDelete($sMsg[1])
+		EndSwitch
 	EndIf
 Wend
 
@@ -93,11 +93,8 @@ Func _Launch($username, $password, $server, $isFlashObj = False)
 	If @error Then $pos = StringInStr($data, 'title="' & StringLower($server))
 	$data = StringTrimLeft(StringLower($data), $pos)
 
-	ConsoleWrite($data)
-
 	$data = StringRegExp($data, 'href="(.*?)">', 3)
 	If @error Then Exit MsgBox(4096, 'Lỗi', 'Đăng nhập thất bại')
-	ConsoleWrite($data[0])
 
 	$data = _HttpRequest(2, $data[0])
 
@@ -119,17 +116,24 @@ Func _Launch($username, $password, $server, $isFlashObj = False)
 	GUICtrlCreateObj($oSWF, 0, 0, 1000, 600)
 	GUISetState()
 
+	ConsoleWrite('server ID: ' & $SeverID[0] & @CRLF)
+	ConsoleWrite('user name: ' & $username & @CRLF)
+	ConsoleWrite('key: ' &  $Key[0] & @CRLF)
+	$id = StringMid($id, StringInStr($id, 'sid=') + 4)
+	ConsoleWrite('sId: ' &  $id & @CRLF)
+	Local $url = StringFormat('http://res%s.gn.zing.vn/flash/Loading.swf?download=direct&user=%s&key=%s&isGuest=False&ua=&fbapp=false&v=&rand=&config=http://s%s.gn.zing.vn/config.xml&sessionId=%s', $SeverID[0] == "1" ? "" : $SeverID[0], $username, $Key[0], $SeverID[0], $id)
+	ConsoleWrite('url: ' &  $url & @CRLF)
 	If $isFlashObj Then
 		With $oSWF
-			.Movie = StringFormat('http://res%s.gn.zing.vn/flash/Loading.swf?user=%s&key=%s&isGuest=False&ua=&fbapp=false&v=&rand=&config=http://s%s.gn.zing.vn/config.xml&sessionId=%s', $SeverID[0] == "1" ? "" : $SeverID[0], $username, $Key[0], $SeverID[0], $id)
+			.Movie = $url
 			.allowScriptAccess = "always"
-			.quality2 = "high"
+			.quality2 = "medium"
 			.menu = "true";"false"
 			.bgcolor = "#000000"
 			.wmode = "direct"
 		EndWith
 	Else
-		_IENavigate($oSWF,StringFormat("http://s%s.gn.zing.vn/Default.aspx?user=%s&key=%s", $SeverID[0], $username, $Key[0]))
+		_IENavigate($oSWF,StringFormat("http://s%s.gn.zing.vn/Default.aspx?download=direct&user=%s&key=%s", $SeverID[0], $username, $Key[0]))
 	EndIf
 
 EndFunc
